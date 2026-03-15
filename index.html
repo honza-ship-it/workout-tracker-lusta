@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workout Tracker</title>
+  <style>
+    :root {
+      --bg: #111111;
+      --surface: #1c1c1e;
+      --surface2: #2c2c2e;
+      --accent: #ff6b35;
+      --accent-dim: rgba(255, 107, 53, 0.12);
+      --text: #f5f5f5;
+      --text-muted: #8e8e93;
+      --border: #2c2c2e;
+      --green: #30d158;
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    .app-header {
+      background: #111;
+      border-bottom: 1px solid var(--border);
+      padding: 18px 24px 0;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      backdrop-filter: blur(20px);
+    }
+
+    .app-title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 14px;
+    }
+
+    /* ── TABS ── */
+    .tabs {
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+
+    .tab {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 10px 20px 12px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      transition: color .15s, border-color .15s;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* ── PAGES ── */
+    .page { display: none; padding: 32px 20px; max-width: 1100px; margin: 0 auto; }
+    .page.active { display: block; }
+
+    .page-title {
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 28px;
+    }
+
+    /* ── EXERCISE CARD ── */
+    .exercise-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 22px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .exercise-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      gap: 12px;
+    }
+
+    .exercise-name {
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    .exercise-sets {
+      background: var(--accent-dim);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 20px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* ── IMAGE GRID ── */
+    .img-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    @media (max-width: 640px) {
+      .img-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .img-cell {
+      aspect-ratio: 4/3;
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--surface2);
+      position: relative;
+    }
+
+    .img-cell img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: opacity .3s;
+    }
+
+    .img-cell .img-fallback {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      background: var(--surface2);
+    }
+
+    /* ── TIPS ── */
+    .tips-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .tips-list {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tips-list li {
+      background: var(--surface2);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 13px;
+      color: #ccc;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tips-list li::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── DIARY ── */
+    .diary-day {
+      margin-bottom: 36px;
+    }
+
+    .diary-day-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .diary-day-title {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .diary-day-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .table-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .table-scroll { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 520px;
+    }
+
+    thead th {
+      background: var(--surface2);
+      padding: 11px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    thead th:first-child { text-align: left; min-width: 190px; }
+
+    tbody tr { border-top: 1px solid var(--border); }
+    tbody tr:hover { background: rgba(255,255,255,.03); }
+
+    tbody td {
+      padding: 10px 14px;
+      font-size: 14px;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    tbody td:first-child { text-align: left; }
+
+    .ex-cell-name { font-weight: 600; font-size: 14px; }
+    .ex-cell-sets { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    .week-input {
+      background: var(--surface2);
+      border: 1.5px solid transparent;
+      border-radius: 8px;
+      color: var(--text);
+      padding: 6px 8px;
+      width: 76px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+      transition: border-color .15s;
+    }
+
+    .week-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .week-input::placeholder { color: var(--text-muted); font-weight: 400; }
+
+    .week-input.has-value { color: var(--green); }
+
+    /* ── WEEK HEADER EDIT ── */
+    .week-th {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .week-th input {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      text-align: center;
+      width: 90px;
+      cursor: pointer;
+    }
+
+    .week-th input:focus {
+      outline: none;
+      color: var(--accent);
+    }
+
+    .week-th .remove-week {
+      background: none;
+      border: none;
+      color: #555;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      padding: 0;
+      display: none;
+    }
+
+    .week-th:hover .remove-week { display: block; }
+
+    /* ── ACTIONS BAR ── */
+    .actions-bar {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .15s, transform .1s;
+    }
+
+    .btn:active { transform: scale(.97); }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-secondary { background: var(--surface2); color: var(--text-muted); }
+    .btn:hover { opacity: .88; }
+
+    /* ── STATS BAR ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    @media (max-width: 480px) {
+      .stats-row { grid-template-columns: 1fr; }
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ── PROGRESS INDICATOR ── */
+    .progress-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--surface2);
+      display: inline-block;
+    }
+
+    .progress-dot.filled { background: var(--green); }
+
+    /* ── INLINE WEIGHTS ── */
+    .inline-weights {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .inline-weights-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .inline-denik-link {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0;
+      opacity: .8;
+      transition: opacity .15s;
+    }
+    .inline-denik-link:hover { opacity: 1; }
+
+    .inline-weeks-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .inline-week {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .inline-week-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+    .empty-state p { font-size: 15px; }
+  </style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-title">Workout Tracker</div>
+  <div class="tabs">
+    <button class="tab active" onclick="showPage('denA')">Den A · Nohy</button>
+    <button class="tab" onclick="showPage('denB')">Den B · Tlak</button>
+    <button class="tab" onclick="showPage('denC')">Den C · Tah</button>
+    <button class="tab" onclick="showPage('denik')">Deník vah</button>
+  </div>
+</div>
+
+<div id="denA" class="page active"></div>
+<div id="denB" class="page"></div>
+<div id="denC" class="page"></div>
+<div id="denik" class="page"></div>
+
+<script>
+/* ─────────────────────────────────────────
+   DATA
+───────────────────────────────────────── */
+const PROGRAM = {
+  denA: {
+    title: 'Den A – Spodní část těla',
+    emoji: '🦵',
+    exercises: [
+      {
+        id: 'goblet_squat',
+        name: 'Goblet Squat',
+        sets: '4 × 8–12 opak.',
+        tips: ['Záda rovná', 'Kolena mírně ven', 'Váhu drž u hrudníku', 'Paty na zemi'],
+        imgs: [
+          'images/goblet_squat_1.jpg',
+          'images/goblet_squat_2.jpg',
+          'images/goblet_squat_3.jpeg',
+          'images/goblet_squat_4.jpeg',
+        ],
+        fallback: '🏋️'
+      },
+      {
+        id: 'rdl',
+        name: 'Rumunský mrtvý tah',
+        sets: '4 × 8–10 opak.',
+        tips: ['Záda rovná + lordóza', 'Závaží blízko těla', 'Cítit protažení hamstringů', 'Nezamykat kolena'],
+        imgs: [
+          'images/rdl_1.png',
+          'images/rdl_2.png',
+          'images/rdl_3.jpg',
+          'images/rdl_4.jpeg',
+        ],
+        fallback: '🏋️'
+      },
+      {
+        id: 'hip_thrust',
+        name: 'Hip Thrust',
+        sets: '3 × 12 opak.',
+        tips: ['Brada k hrudi', 'Stlačit hýždě nahoře', 'Záda opřít o lavičku', 'Chodidla na šíři ramen'],
+        imgs: [
+          'images/hip_thrust_1.jpeg',
+          'images/hip_thrust_2.jpeg',
+          'images/hip_thrust_3.jpeg',
+          'images/hip_thrust_4.jpeg',
+        ],
+        fallback: '🍑'
+      },
+      {
+        id: 'vypady',
+        name: 'Výpady (Lunges)',
+        sets: '3 × 10 opak. (každá noha)',
+        tips: ['Přední koleno nad špičkou', 'Záda vzpřímená', 'Zadní koleno téměř k zemi', 'Kontrolovaný pohyb'],
+        imgs: [
+          'images/vypady_1.png',
+          'images/vypady_2.png',
+          'images/vypady_3.png',
+          'images/vypady_4.png',
+        ],
+        fallback: '🚶'
+      },
+      {
+        id: 'calf_raise',
+        name: 'Výpony ve stoji (Calf Raises)',
+        sets: '4 × 15–20 opak.',
+        tips: ['Plný rozsah pohybu', 'Vydržet nahoře 1 s', 'Pomalu dolů (2–3 s)', 'Bez houpání'],
+        imgs: [
+          'images/calf_raise_1.jpg',
+          'images/calf_raise_2.jpg',
+          'images/calf_raise_3.png',
+          'images/calf_raise_4.png',
+        ],
+        fallback: '💪'
+      },
+    ]
+  },
+
+  denB: {
+    title: 'Den B – Horní část těla (Tlak)',
+    emoji: '💪',
+    exercises: [
+      {
+        id: 'bench_press',
+        name: 'Bench Press',
+        sets: '4 × 8–12 opak.',
+        tips: ['Lopatky stáhnuté', 'Chodidla na zemi', 'Úchop 1,5× šíře ramen', 'Kontrolovaný spust'],
+        imgs: [
+          'images/bench_press_1.jpg',
+          'images/bench_press_2.png',
+          'images/bench_press_3.jpeg',
+          'images/bench_press_4.jpeg',
+        ],
+        fallback: '🏋️'
+      },
+      {
+        id: 'ohp',
+        name: 'Overhead Press',
+        sets: '3 × 8–10 opak.',
+        tips: ['Neutrální pánev', 'Tyč před čelem', 'Plná extenze lokty', 'Bez prohnutí zad'],
+        imgs: [
+          'images/ohp_1.jpg',
+          'images/ohp_2.jpg',
+          'images/ohp_3.jpeg',
+          'images/ohp_4.jpeg',
+        ],
+        fallback: '🏋️'
+      },
+      {
+        id: 'incline_db',
+        name: 'Šikmý bench press (jednoručky)',
+        sets: '3 × 10–12 opak.',
+        tips: ['Lavička 30–45°', 'Jednoručky k sobě nahoře', 'Lokty neklesají', 'Pomalý spust'],
+        imgs: [
+          'images/incline_db_1.png',
+          'images/incline_db_2.png',
+          'images/incline_db_3.png',
+          'images/incline_db_4.png',
+        ],
+        fallback: '💪'
+      },
+      {
+        id: 'tricep_pushdown',
+        name: 'Tricep Pushdown (kladka)',
+        sets: '3 × 12–15 opak.',
+        tips: ['Lokty u těla', 'Plný rozsah pohybu', 'Kontrolovaný návrat', 'Nevyklánět trup'],
+        imgs: [
+          'images/tricep_pushdown_1.png',
+          'images/tricep_pushdown_2.png',
+          'images/tricep_pushdown_3.jpeg',
+          'images/tricep_pushdown_4.jpeg',
+        ],
+        fallback: '💪'
+      },
+      {
+        id: 'dipy',
+        name: 'Dipy (Dips)',
+        sets: '3 × max opakování',
+        tips: ['Tělo mírně dopředu', 'Lokty dozadu', 'Neklesat moc hluboko', 'Pro zátěž použít opasek'],
+        imgs: [
+          'images/dipy_1.png',
+          'images/dipy_2.png',
+          'images/dipy_3.png',
+          'images/dipy_4.png',
+        ],
+        fallback: '🤸'
+      },
+    ]
+  },
+
+  denC: {
+    title: 'Den C – Horní část těla (Tah)',
+    emoji: '🔙',
+    exercises: [
+      {
+        id: 'lat_pulldown',
+        name: 'Stahování na kladce (Lat Pulldown)',
+        sets: '4 × 10–12 opak.',
+        tips: ['Stáhnout lopatky dolů', 'Natáhnout se před pohybem', 'Lokty k tělu dolů', 'Nevyklánět příliš'],
+        imgs: [
+          'images/lat_pulldown_1.jpg',
+          'images/lat_pulldown_2.jpg',
+          'images/lat_pulldown_3.png',
+          'images/lat_pulldown_4.jpg',
+        ],
+        fallback: '🏋️'
+      },
+      {
+        id: 'shyby',
+        name: 'Shyby (Pull-ups / Chin-ups)',
+        sets: '3 × max opakování',
+        tips: ['Plný rozsah pohybu', 'Nezamykat lokty dolů', 'Stáhnout lopatky', 'Nadhmat nebo podhmat'],
+        imgs: [
+          'images/shyby_1.jpg',
+          'images/shyby_2.png',
+          'images/shyby_3.jpg',
+          'images/shyby_4.jpeg',
+        ],
+        fallback: '🤸'
+      },
+      {
+        id: 'barbell_row',
+        name: 'Veslování ve shybu (Barbell Row)',
+        sets: '4 × 8–10 opak.',
+        tips: ['Záda rovná', 'Tah k pupku', 'Lokty blízko tělu', 'Stlačit lopatky v kontrakci'],
+        imgs: [
+          'images/barbell_row_1.jpeg',
+          'images/barbell_row_2.jpeg',
+          'images/barbell_row_3.jpeg',
+          'images/barbell_row_4.jpeg',
+        ],
+        fallback: '🏋️'
+      },
+      {
+        id: 'cable_row',
+        name: 'Veslování na kladce (Cable Row)',
+        sets: '3 × 12 opak.',
+        tips: ['Záda vzpřímená', 'Tah k žaludku', 'Držet polohu 1 s', 'Pomalý návrat'],
+        imgs: [
+          'images/cable_row_1.jpg',
+          'images/cable_row_2.jpg',
+          'images/cable_row_3.jpeg',
+          'images/cable_row_4.jpeg',
+        ],
+        fallback: '💪'
+      },
+      {
+        id: 'bicep_curl',
+        name: 'Bicepsový zdvih (Bicep Curl)',
+        sets: '3 × 12 opak.',
+        tips: ['Lokty u těla', 'Plný rozsah pohybu', 'Neodchylovat tělo', 'Obě ruce nebo alternovat'],
+        imgs: [
+          'images/bicep_curl_1.jpeg',
+          'images/bicep_curl_2.jpeg',
+          'images/bicep_curl_3.jpeg',
+          'images/bicep_curl_4.jpeg',
+        ],
+        fallback: '💪'
+      },
+    ]
+  }
+};
+
+/* ─────────────────────────────────────────
+   STATE  (localStorage)
+───────────────────────────────────────── */
+let weeks   = JSON.parse(localStorage.getItem('wt_weeks')   || '["Týden 1","Týden 2","Týden 3","Týden 4"]');
+let weights = JSON.parse(localStorage.getItem('wt_weights') || '{}');
+
+function save() {
+  localStorage.setItem('wt_weeks',   JSON.stringify(weeks));
+  localStorage.setItem('wt_weights', JSON.stringify(weights));
+}
+
+/* ─────────────────────────────────────────
+   NAVIGATION
+───────────────────────────────────────── */
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const order = ['denA','denB','denC','denik'];
+  document.querySelectorAll('.tab')[order.indexOf(id)].classList.add('active');
+  if (id === 'denik') renderDiary();
+}
+
+/* ─────────────────────────────────────────
+   EXERCISE PAGES
+───────────────────────────────────────── */
+function renderImg(src, fallback, name, i) {
+  return `
+    <div class="img-cell">
+      <div class="img-fallback">${fallback}</div>
+      <img src="${src}" alt="${name} ${i+1}" loading="lazy"
+           onload="this.previousElementSibling.style.display='none'"
+           onerror="this.style.display='none'">
+    </div>`;
+}
+
+function renderInlineWeights(ex) {
+  const cells = weeks.map((w, wi) => {
+    const val = getWeight(ex.id, wi);
+    const cls = val !== '' ? ' has-value' : '';
+    return `
+      <div class="inline-week">
+        <div class="inline-week-label">${w}</div>
+        <input class="week-input${cls}" type="text" placeholder="—"
+               value="${val}" data-ex="${ex.id}" data-wi="${wi}"
+               onchange="setWeight('${ex.id}', ${wi}, this.value)">
+      </div>`;
+  }).join('');
+  return `
+    <div class="inline-weights">
+      <div class="inline-weights-header">
+        <span class="tips-label" style="margin:0">Váhový deník</span>
+        <button class="inline-denik-link" onclick="showPage('denik')" title="Zobrazit přehled">↗ Celý přehled</button>
+      </div>
+      <div class="inline-weeks-row">${cells}</div>
+    </div>`;
+}
+
+function renderExercise(ex) {
+  return `
+    <div class="exercise-card">
+      <div class="exercise-top">
+        <span class="exercise-name">${ex.name}</span>
+        <span class="exercise-sets">${ex.sets}</span>
+      </div>
+      <div class="img-grid">
+        ${ex.imgs.map((src, i) => renderImg(src, ex.fallback, ex.name, i)).join('')}
+      </div>
+      <div class="tips-label">Tipy</div>
+      <ul class="tips-list">
+        ${ex.tips.map(t => `<li>${t}</li>`).join('')}
+      </ul>
+      ${renderInlineWeights(ex)}
+    </div>`;
+}
+
+function renderDay(key) {
+  const day = PROGRAM[key];
+  document.getElementById(key).innerHTML =
+    `<h1 class="page-title">${day.emoji} ${day.title}</h1>` +
+    day.exercises.map(renderExercise).join('');
+}
+
+/* ─────────────────────────────────────────
+   DIARY
+───────────────────────────────────────── */
+function getWeight(exId, wi) {
+  return (weights[exId] && weights[exId][wi] != null) ? weights[exId][wi] : '';
+}
+
+function setWeight(exId, wi, val) {
+  if (!weights[exId]) weights[exId] = {};
+  if (val === '') {
+    delete weights[exId][wi];
+  } else {
+    weights[exId][wi] = val;
+  }
+  save();
+  updateInputStyle(exId, wi);
+}
+
+function updateInputStyle(exId, wi) {
+  const inp = document.querySelector(`[data-ex="${exId}"][data-wi="${wi}"]`);
+  if (!inp) return;
+  inp.classList.toggle('has-value', inp.value !== '');
+}
+
+function addWeek() {
+  weeks.push(`Týden ${weeks.length + 1}`);
+  save();
+  renderDay('denA');
+  renderDay('denB');
+  renderDay('denC');
+  renderDiary();
+}
+
+function removeWeek(wi) {
+  if (weeks.length <= 1) return;
+  weeks.splice(wi, 1);
+  Object.keys(weights).forEach(exId => {
+    const shifted = {};
+    Object.keys(weights[exId]).forEach(k => {
+      const ki = parseInt(k);
+      if (ki < wi) shifted[ki] = weights[exId][ki];
+      else if (ki > wi) shifted[ki - 1] = weights[exId][ki];
+    });
+    weights[exId] = shifted;
+  });
+  save();
+  renderDay('denA');
+  renderDay('denB');
+  renderDay('denC');
+  renderDiary();
+}
+
+function renameWeek(wi, val) {
+  weeks[wi] = val || `Týden ${wi + 1}`;
+  save();
+  renderDay('denA');
+  renderDay('denB');
+  renderDay('denC');
+}
+
+function calcStats() {
+  const allEx = Object.values(PROGRAM).flatMap(d => d.exercises);
+  let filled = 0, total = allEx.length * weeks.length;
+  allEx.forEach(ex => {
+    weeks.forEach((_, wi) => { if (getWeight(ex.id, wi) !== '') filled++; });
+  });
+  const pct = total ? Math.round((filled / total) * 100) : 0;
+  return { filled, total, pct, exercises: allEx.length };
+}
+
+function renderDiary() {
+  const stats = calcStats();
+  const container = document.getElementById('denik');
+
+  const statsHtml = `
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value">${weeks.length}</div>
+        <div class="stat-label">Sledovaných týdnů</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${stats.exercises}</div>
+        <div class="stat-label">Cviků celkem</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${stats.pct} %</div>
+        <div class="stat-label">Vyplněno (${stats.filled} / ${stats.total})</div>
+      </div>
+    </div>`;
+
+  const daysHtml = Object.entries(PROGRAM).map(([key, day]) => {
+    const weekHeaders = weeks.map((w, wi) => `
+      <th>
+        <div class="week-th">
+          <input value="${w}" onchange="renameWeek(${wi}, this.value)"
+                 title="Klikni pro přejmenování">
+          <button class="remove-week" onclick="removeWeek(${wi})" title="Odstranit týden">✕</button>
+        </div>
+      </th>`).join('');
+
+    const rows = day.exercises.map(ex => {
+      const cells = weeks.map((_, wi) => {
+        const val = getWeight(ex.id, wi);
+        const cls = val !== '' ? ' has-value' : '';
+        return `<td>
+          <input class="week-input${cls}" type="text" placeholder="—"
+                 value="${val}" data-ex="${ex.id}" data-wi="${wi}"
+                 onchange="setWeight('${ex.id}', ${wi}, this.value)">
+        </td>`;
+      }).join('');
+
+      return `<tr>
+        <td>
+          <div class="ex-cell-name">${ex.name}</div>
+          <div class="ex-cell-sets">${ex.sets}</div>
+        </td>
+        ${cells}
+      </tr>`;
+    }).join('');
+
+    return `
+      <div class="diary-day">
+        <div class="diary-day-header">
+          <div>
+            <div class="diary-day-title">${day.emoji} ${day.title.split('–')[1].trim()}</div>
+            <div class="diary-day-sub">${day.title.split('–')[0].trim()}</div>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cvik</th>
+                  ${weekHeaders}
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <h1 class="page-title">📊 Deník vah</h1>
+    ${statsHtml}
+    ${daysHtml}
+    <div class="actions-bar">
+      <button class="btn btn-primary" onclick="addWeek()">+ Přidat týden</button>
+      <button class="btn btn-secondary" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="btn btn-secondary" onclick="clearAll()">🗑 Vymazat vše</button>
+    </div>`;
+}
+
+/* ─────────────────────────────────────────
+   EXPORT CSV
+───────────────────────────────────────── */
+function exportCSV() {
+  const allEx = Object.values(PROGRAM).flatMap(d => d.exercises);
+  const header = ['Cvik', ...weeks].join(',');
+  const rows = allEx.map(ex =>
+    ['"' + ex.name + '"', ...weeks.map((_, wi) => getWeight(ex.id, wi) || '')].join(',')
+  );
+  const csv = [header, ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'workout-vahy.csv';
+  a.click();
+}
+
+/* ─────────────────────────────────────────
+   CLEAR ALL
+───────────────────────────────────────── */
+function clearAll() {
+  if (!confirm('Opravdu chceš smazat všechna uložená váhová maxima? Tato akce nelze vrátit.')) return;
+  weights = {};
+  save();
+  renderDiary();
+}
+
+/* ─────────────────────────────────────────
+   INIT
+───────────────────────────────────────── */
+renderDay('denA');
+renderDay('denB');
+renderDay('denC');
+renderDiary();
+</script>
+</body>
+</html>
