@@ -101,6 +101,30 @@
       gap: 12px;
     }
 
+    .exercise-card.collapsed .exercise-top {
+      margin-bottom: 0;
+    }
+
+    .exercise-card.collapsed .exercise-body {
+      display: none;
+    }
+
+    .collapse-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 18px;
+      padding: 0 0 0 8px;
+      line-height: 1;
+      flex-shrink: 0;
+      transition: transform 0.2s;
+    }
+
+    .exercise-card.collapsed .collapse-btn {
+      transform: rotate(-90deg);
+    }
+
     .exercise-name {
       font-size: 17px;
       font-weight: 700;
@@ -523,6 +547,45 @@ const PROGRAM = {
         fallback: '🚶'
       },
       {
+        id: 'leg_press',
+        name: 'Leg Press',
+        sets: '4 × 10–12 opak.',
+        tips: ['Chodidla na šíři ramen', 'Kolena nepadají dovnitř', 'Plný rozsah pohybu', 'Nezamykat kolena'],
+        imgs: [
+          'images/leg_press_1.jpg',
+          'images/leg_press_2.jpg',
+          'images/leg_press_3.jpg',
+          'images/leg_press_4.jpg',
+        ],
+        fallback: '🦵'
+      },
+      {
+        id: 'step_ups',
+        name: 'Step-ups na lavičku',
+        sets: '3 × 10 opak. (každá noha)',
+        tips: ['Celé chodidlo na lavičku', 'Tlačit přes patu', 'Záda vzpřímená', 'Kontrolovaný sestup'],
+        imgs: [
+          'images/step_ups_1.jpg',
+          'images/step_ups_2.jpg',
+          'images/step_ups_3.jpg',
+          'images/step_ups_4.jpg',
+        ],
+        fallback: '🪜'
+      },
+      {
+        id: 'leg_curl',
+        name: 'Leg Curl (zakopávání)',
+        sets: '3 × 12 opak.',
+        tips: ['Boky přitlačeny k podložce', 'Plný rozsah pohybu', 'Pomalý návrat (2–3 s)', 'Nepomáhat hýžděmi'],
+        imgs: [
+          'images/leg_curl_1.jpg',
+          'images/leg_curl_2.jpg',
+          'images/leg_curl_3.jpg',
+          'images/leg_curl_4.jpg',
+        ],
+        fallback: '🦵'
+      },
+      {
         id: 'calf_raise',
         name: 'Výpony ve stoji (Calf Raises)',
         sets: '4 × 15–20 opak.',
@@ -534,6 +597,45 @@ const PROGRAM = {
           'images/calf_raise_4.png',
         ],
         fallback: '💪'
+      },
+      {
+        id: 'hip_abductor',
+        name: 'Hip Abductor (stroj)',
+        sets: '3 × 15 opak.',
+        tips: ['Záda opřená o opěrku', 'Pomalý pohyb oběma směry', 'Nekymácet trupem', 'Plný rozsah pohybu'],
+        imgs: [
+          'images/hip_abductor_1.jpg',
+          'images/hip_abductor_2.jpg',
+          'images/hip_abductor_3.jpg',
+          'images/hip_abductor_4.jpg',
+        ],
+        fallback: '🦵'
+      },
+      {
+        id: 'plank',
+        name: 'Plank',
+        sets: '3 × 30–60 s',
+        tips: ['Tělo v přímé linii', 'Nezvedat hýždě', 'Stáhnout břicho', 'Dýchat rovnoměrně'],
+        imgs: [
+          'images/plank_1.jpg',
+          'images/plank_2.jpg',
+          'images/plank_3.jpg',
+          'images/plank_4.jpg',
+        ],
+        fallback: '🧘'
+      },
+      {
+        id: 'deadbug',
+        name: 'Dead Bug',
+        sets: '3 × 10 opak. (každá strana)',
+        tips: ['Záda přitlačená k zemi', 'Pohybovat pomalu', 'Protilehlá ruka + noha', 'Nevydechovat razantně'],
+        imgs: [
+          'images/deadbug_1.jpg',
+          'images/deadbug_2.jpg',
+          'images/deadbug_3.jpg',
+          'images/deadbug_4.jpg',
+        ],
+        fallback: '🐛'
       },
     ]
   },
@@ -688,10 +790,19 @@ const PROGRAM = {
 ───────────────────────────────────────── */
 let weeks   = JSON.parse(localStorage.getItem('wt_weeks')   || '["Týden 1","Týden 2","Týden 3","Týden 4"]');
 let weights = JSON.parse(localStorage.getItem('wt_weights') || '{}');
+let collapsed_exercises = JSON.parse(localStorage.getItem('wt_collapsed') || '{}');
 
 function save() {
-  localStorage.setItem('wt_weeks',   JSON.stringify(weeks));
-  localStorage.setItem('wt_weights', JSON.stringify(weights));
+  localStorage.setItem('wt_weeks',     JSON.stringify(weeks));
+  localStorage.setItem('wt_weights',   JSON.stringify(weights));
+  localStorage.setItem('wt_collapsed', JSON.stringify(collapsed_exercises));
+}
+
+function toggleCard(id) {
+  collapsed_exercises[id] = !collapsed_exercises[id];
+  save();
+  const card = document.getElementById('card-' + id);
+  card.classList.toggle('collapsed', collapsed_exercises[id]);
 }
 
 /* ─────────────────────────────────────────
@@ -742,20 +853,26 @@ function renderInlineWeights(ex) {
 }
 
 function renderExercise(ex) {
+  const collapsed = (collapsed_exercises[ex.id] || false) ? ' collapsed' : '';
   return `
-    <div class="exercise-card">
+    <div class="exercise-card${collapsed}" id="card-${ex.id}">
       <div class="exercise-top">
         <span class="exercise-name">${ex.name}</span>
-        <span class="exercise-sets">${ex.sets}</span>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          <span class="exercise-sets">${ex.sets}</span>
+          <button class="collapse-btn" onclick="toggleCard('${ex.id}')" title="Skrýt/zobrazit">▼</button>
+        </div>
       </div>
-      <div class="img-grid">
-        ${ex.imgs.map((src, i) => renderImg(src, ex.fallback, ex.name, i)).join('')}
+      <div class="exercise-body">
+        <div class="img-grid">
+          ${ex.imgs.map((src, i) => renderImg(src, ex.fallback, ex.name, i)).join('')}
+        </div>
+        <div class="tips-label">Tipy</div>
+        <ul class="tips-list">
+          ${ex.tips.map(t => `<li>${t}</li>`).join('')}
+        </ul>
+        ${renderInlineWeights(ex)}
       </div>
-      <div class="tips-label">Tipy</div>
-      <ul class="tips-list">
-        ${ex.tips.map(t => `<li>${t}</li>`).join('')}
-      </ul>
-      ${renderInlineWeights(ex)}
     </div>`;
 }
 
