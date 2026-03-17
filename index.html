@@ -180,6 +180,58 @@
       background: var(--surface2);
     }
 
+    /* ── YOUTUBE EMBED ── */
+    .yt-wrap {
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      overflow: hidden;
+      border-radius: 10px;
+      margin-bottom: 18px;
+      background: var(--surface2);
+    }
+    .yt-wrap iframe {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      border: 0;
+      border-radius: 10px;
+    }
+    .yt-set-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    .yt-set-input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+      padding: 6px 10px;
+      min-width: 0;
+    }
+    .yt-set-input::placeholder { color: var(--text-muted); }
+    .yt-set-btn {
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 7px 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .yt-set-btn:hover { opacity: .8; }
+    .yt-set-btn.remove {
+      background: rgba(255,60,60,.12);
+      color: #ff3b30;
+    }
+
     /* ── TIPS ── */
     .tips-label {
       font-size: 12px;
@@ -1083,6 +1135,7 @@ let cal_data = JSON.parse(localStorage.getItem('wt_cal_data') || '{}');
 let cal_goal = parseInt(localStorage.getItem('wt_cal_goal') || '2500');
 let cal_week_offset = 0;
 let api_key = localStorage.getItem('wt_api_key') || '';
+let youtube_ids = JSON.parse(localStorage.getItem('wt_youtube') || '{}');
 
 function save() {
   localStorage.setItem('wt_weeks',     JSON.stringify(weeks));
@@ -1090,6 +1143,7 @@ function save() {
   localStorage.setItem('wt_collapsed', JSON.stringify(collapsed_exercises));
   localStorage.setItem('wt_cal_data',  JSON.stringify(cal_data));
   localStorage.setItem('wt_cal_goal',  cal_goal);
+  localStorage.setItem('wt_youtube',   JSON.stringify(youtube_ids));
 }
 
 function saveApiKey(val) {
@@ -1169,6 +1223,22 @@ function toggleCard(id) {
   save();
   const card = document.getElementById('card-' + id);
   card.classList.toggle('collapsed', collapsed_exercises[id]);
+}
+
+function setYoutubeId(exId, val) {
+  val = val.trim();
+  // Accept full YouTube URLs too (extracts the 11-char video ID)
+  const match = val.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
+  if (match) val = match[1];
+  if (val) {
+    youtube_ids[exId] = val;
+  } else {
+    delete youtube_ids[exId];
+  }
+  save();
+  ['denA','denB','denC'].forEach(key => {
+    if (PROGRAM[key].exercises.some(e => e.id === exId)) renderDay(key);
+  });
 }
 
 /* ─────────────────────────────────────────
@@ -1403,6 +1473,22 @@ function renderInlineWeights(ex) {
 
 function renderExercise(ex) {
   const collapsed = (collapsed_exercises[ex.id] || false) ? ' collapsed' : '';
+  const ytId = youtube_ids[ex.id] || '';
+
+  const mediaSection = ytId
+    ? `<div class="yt-wrap">
+         <iframe src="https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1"
+                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                 allowfullscreen></iframe>
+       </div>`
+    : `<div class="img-grid">
+         ${ex.imgs.slice(0,2).map((src, i) => renderImg(src, ex.fallback, ex.name, i)).join('')}
+       </div>`;
+
+  const removeBtn = ytId
+    ? `<button class="yt-set-btn remove" onclick="setYoutubeId('${ex.id}', '')">✕</button>`
+    : '';
+
   return `
     <div class="exercise-card${collapsed}" id="card-${ex.id}">
       <div class="exercise-top">
@@ -1413,8 +1499,13 @@ function renderExercise(ex) {
         </div>
       </div>
       <div class="exercise-body">
-        <div class="img-grid">
-          ${ex.imgs.slice(0,2).map((src, i) => renderImg(src, ex.fallback, ex.name, i)).join('')}
+        ${mediaSection}
+        <div class="yt-set-row">
+          <input class="yt-set-input" type="text" id="yt-input-${ex.id}"
+                 placeholder="📺 YouTube ID nebo URL…"
+                 value="${ytId}">
+          <button class="yt-set-btn" onclick="setYoutubeId('${ex.id}', document.getElementById('yt-input-${ex.id}').value)">Uložit</button>
+          ${removeBtn}
         </div>
         <div class="tips-label">Tipy</div>
         <ul class="tips-list">
