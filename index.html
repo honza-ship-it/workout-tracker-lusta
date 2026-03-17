@@ -1228,7 +1228,7 @@ function toggleCard(id) {
 function setYoutubeId(exId, val) {
   val = val.trim();
   // Accept full YouTube URLs too (extracts the 11-char video ID)
-  const match = val.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
+  const match = val.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([a-zA-Z0-9_-]{11})/);
   if (match) val = match[1];
   if (val) {
     youtube_ids[exId] = val;
