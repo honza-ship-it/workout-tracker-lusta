@@ -466,6 +466,173 @@
 
     .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
     .empty-state p { font-size: 15px; }
+
+    /* ── KALORIE ── */
+    .kal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      gap: 12px;
+    }
+    .kal-week-nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .kal-week-nav button {
+      background: var(--surface2);
+      border: none;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .kal-week-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      min-width: 120px;
+      text-align: center;
+    }
+    .kal-goal-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+    .kal-goal-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      flex: 1;
+    }
+    .kal-goal-input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 700;
+      padding: 6px 10px;
+      width: 90px;
+      text-align: center;
+    }
+    .kal-goal-unit {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .kal-day-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 14px;
+      border: 1px solid var(--border);
+    }
+    .kal-day-card.today {
+      border-color: var(--accent);
+    }
+    .kal-day-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .kal-day-name {
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .kal-day-date {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .kal-day-total {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .kal-day-total.over {
+      color: #ff453a;
+    }
+    .kal-day-total.ok {
+      color: var(--green);
+    }
+    .kal-progress {
+      height: 6px;
+      background: var(--surface2);
+      border-radius: 3px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .kal-progress-bar {
+      height: 100%;
+      border-radius: 3px;
+      background: var(--accent);
+      transition: width 0.3s;
+    }
+    .kal-progress-bar.ok { background: var(--green); }
+    .kal-progress-bar.over { background: #ff453a; }
+    .kal-meals {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 480px) {
+      .kal-meals { grid-template-columns: 1fr 1fr; }
+    }
+    .kal-meal {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .kal-meal-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    .kal-meal-input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 15px;
+      padding: 8px 10px;
+      width: 100%;
+      text-align: center;
+    }
+    .kal-meal-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .kal-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .kal-stat {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+    .kal-stat-value {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .kal-stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
   </style>
 </head>
 <body>
@@ -477,6 +644,7 @@
     <button class="tab" onclick="showPage('denB')">Den B · Tlak</button>
     <button class="tab" onclick="showPage('denC')">Den C · Tah</button>
     <button class="tab" onclick="showPage('denik')">Deník vah</button>
+    <button class="tab" onclick="showPage('kalorie')">Kalorie</button>
   </div>
 </div>
 
@@ -484,6 +652,7 @@
 <div id="denB" class="page"></div>
 <div id="denC" class="page"></div>
 <div id="denik" class="page"></div>
+<div id="kalorie" class="page"></div>
 
 <script>
 /* ─────────────────────────────────────────
@@ -791,11 +960,16 @@ const PROGRAM = {
 let weeks   = JSON.parse(localStorage.getItem('wt_weeks')   || '["Týden 1","Týden 2","Týden 3","Týden 4"]');
 let weights = JSON.parse(localStorage.getItem('wt_weights') || '{}');
 let collapsed_exercises = JSON.parse(localStorage.getItem('wt_collapsed') || '{}');
+let cal_data = JSON.parse(localStorage.getItem('wt_cal_data') || '{}');
+let cal_goal = parseInt(localStorage.getItem('wt_cal_goal') || '2500');
+let cal_week_offset = 0; // 0 = current week, -1 = last week, etc.
 
 function save() {
   localStorage.setItem('wt_weeks',     JSON.stringify(weeks));
   localStorage.setItem('wt_weights',   JSON.stringify(weights));
   localStorage.setItem('wt_collapsed', JSON.stringify(collapsed_exercises));
+  localStorage.setItem('wt_cal_data',  JSON.stringify(cal_data));
+  localStorage.setItem('wt_cal_goal',  cal_goal);
 }
 
 function toggleCard(id) {
@@ -812,9 +986,179 @@ function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  const order = ['denA','denB','denC','denik'];
+  const order = ['denA','denB','denC','denik','kalorie'];
   document.querySelectorAll('.tab')[order.indexOf(id)].classList.add('active');
   if (id === 'denik') renderDiary();
+  if (id === 'kalorie') renderKalorie();
+}
+
+/* ─────────────────────────────────────────
+   KALORIE
+───────────────────────────────────────── */
+const DAY_NAMES = ['Neděle','Pondělí','Úterý','Středa','Čtvrtek','Pátek','Sobota'];
+const DAY_SHORT = ['Ne','Po','Út','St','Čt','Pá','So'];
+
+function isoDate(d) {
+  return d.toISOString().slice(0,10);
+}
+
+function getWeekDates(offset) {
+  const today = new Date();
+  const dow = today.getDay(); // 0=Sun
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - ((dow + 6) % 7) + offset * 7);
+  return Array.from({length:7}, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return d;
+  });
+}
+
+function getCalDay(dateStr) {
+  return cal_data[dateStr] || {b:0, l:0, d:0, sm:0, sa:0, h:0};
+}
+
+function setCalMeal(dateStr, meal, val) {
+  if (!cal_data[dateStr]) cal_data[dateStr] = {b:0,l:0,d:0,sm:0,sa:0,h:0};
+  cal_data[dateStr][meal] = parseInt(val) || 0;
+  save();
+  updateKalDayCard(dateStr);
+  updateKalStats();
+}
+
+function setCalGoal(val) {
+  cal_goal = parseInt(val) || 2500;
+  save();
+  renderKalorie();
+}
+
+function updateKalDayCard(dateStr) {
+  const day = getCalDay(dateStr);
+  const total = day.b + day.l + day.d + day.sm + day.sa + day.h;
+  const pct = cal_goal > 0 ? Math.min(total / cal_goal * 100, 100) : 0;
+  const over = total > cal_goal;
+  const ok = total > 0 && !over;
+  const cls = over ? 'over' : ok ? 'ok' : '';
+
+  const totalEl = document.getElementById('kal-total-' + dateStr);
+  const barEl   = document.getElementById('kal-bar-'   + dateStr);
+  if (totalEl) {
+    totalEl.textContent = total ? total.toLocaleString() + ' kcal' : '—';
+    totalEl.className = 'kal-day-total' + (cls ? ' ' + cls : '');
+  }
+  if (barEl) {
+    barEl.style.width = pct + '%';
+    barEl.className = 'kal-progress-bar' + (cls ? ' ' + cls : '');
+  }
+}
+
+function updateKalStats() {
+  const dates = getWeekDates(cal_week_offset).map(isoDate);
+  const totals = dates.map(d => { const x=getCalDay(d); return x.b+x.l+x.d+x.sm+x.sa+x.h; });
+  const tracked = totals.filter(t => t > 0);
+  const avg = tracked.length ? Math.round(tracked.reduce((a,b)=>a+b,0)/tracked.length) : 0;
+  const weekTotal = totals.reduce((a,b)=>a+b,0);
+
+  const avgEl = document.getElementById('kal-stat-avg');
+  const totEl = document.getElementById('kal-stat-total');
+  const daysEl = document.getElementById('kal-stat-days');
+  if (avgEl) avgEl.textContent = avg ? avg.toLocaleString() : '—';
+  if (totEl) totEl.textContent = weekTotal ? weekTotal.toLocaleString() : '—';
+  if (daysEl) daysEl.textContent = tracked.length + ' / 7';
+}
+
+function renderKalorie() {
+  const container = document.getElementById('kalorie');
+  const today = isoDate(new Date());
+  const dates  = getWeekDates(cal_week_offset);
+
+  const weekStart = dates[0];
+  const weekEnd   = dates[6];
+  const fmt = d => d.getDate() + '.' + (d.getMonth()+1) + '.';
+  const weekLabel = fmt(weekStart) + ' – ' + fmt(weekEnd);
+
+  const dayCards = dates.map(d => {
+    const ds    = isoDate(d);
+    const isToday = ds === today;
+    const dayData = getCalDay(ds);
+    const total = dayData.b + dayData.l + dayData.d + dayData.sm + dayData.sa + dayData.h;
+    const pct   = cal_goal > 0 ? Math.min(total / cal_goal * 100, 100) : 0;
+    const over  = total > cal_goal;
+    const ok    = total > 0 && !over;
+    const cls   = over ? 'over' : ok ? 'ok' : '';
+
+    const meals = [
+      {key:'b',  label:'Snídaně'},
+      {key:'sm', label:'Dop. svačina'},
+      {key:'l',  label:'Oběd'},
+      {key:'d',  label:'Večeře'},
+      {key:'sa', label:'Odp. svačina'},
+      {key:'h',  label:'🍫 Hříchy'},
+    ];
+
+    const mealInputs = meals.map(m => `
+      <div class="kal-meal">
+        <div class="kal-meal-label">${m.label}</div>
+        <input class="kal-meal-input" type="number" min="0" placeholder="0"
+               value="${dayData[m.key] || ''}"
+               onchange="setCalMeal('${ds}','${m.key}',this.value)">
+      </div>`).join('');
+
+    return `
+      <div class="kal-day-card${isToday ? ' today' : ''}">
+        <div class="kal-day-top">
+          <div>
+            <div class="kal-day-name">${DAY_NAMES[d.getDay()]}${isToday ? ' <span style="color:var(--accent);font-size:12px">· dnes</span>' : ''}</div>
+            <div class="kal-day-date">${d.getDate()}. ${d.getMonth()+1}. ${d.getFullYear()}</div>
+          </div>
+          <div id="kal-total-${ds}" class="kal-day-total${cls ? ' '+cls : ''}">${total ? total.toLocaleString()+' kcal' : '—'}</div>
+        </div>
+        <div class="kal-progress">
+          <div id="kal-bar-${ds}" class="kal-progress-bar${cls ? ' '+cls : ''}" style="width:${pct}%"></div>
+        </div>
+        <div class="kal-meals">${mealInputs}</div>
+      </div>`;
+  }).join('');
+
+  const totals = dates.map(d => { const x=getCalDay(isoDate(d)); return x.b+x.l+x.d+x.sm+x.sa+x.h; });
+  const tracked = totals.filter(t => t > 0);
+  const avg = tracked.length ? Math.round(tracked.reduce((a,b)=>a+b,0)/tracked.length) : 0;
+  const weekTotal = totals.reduce((a,b)=>a+b,0);
+
+  container.innerHTML = `
+    <h1 class="page-title">🔥 Kalorický deník</h1>
+
+    <div class="kal-goal-row">
+      <div class="kal-goal-label">Denní kalorický cíl</div>
+      <input class="kal-goal-input" type="number" min="0" value="${cal_goal}"
+             onchange="setCalGoal(this.value)">
+      <span class="kal-goal-unit">kcal</span>
+    </div>
+
+    <div class="kal-header">
+      <div class="kal-week-nav">
+        <button onclick="cal_week_offset--;renderKalorie()">‹</button>
+        <div class="kal-week-label">${weekLabel}</div>
+        <button onclick="cal_week_offset++;renderKalorie()" ${cal_week_offset >= 0 ? 'disabled style="opacity:.4"' : ''}>›</button>
+      </div>
+    </div>
+
+    <div class="kal-stats">
+      <div class="kal-stat">
+        <div id="kal-stat-avg" class="kal-stat-value">${avg ? avg.toLocaleString() : '—'}</div>
+        <div class="kal-stat-label">Průměr / den</div>
+      </div>
+      <div class="kal-stat">
+        <div id="kal-stat-total" class="kal-stat-value">${weekTotal ? weekTotal.toLocaleString() : '—'}</div>
+        <div class="kal-stat-label">Celkem týden</div>
+      </div>
+      <div class="kal-stat">
+        <div id="kal-stat-days" class="kal-stat-value">${tracked.length} / 7</div>
+        <div class="kal-stat-label">Dní zaznamenáno</div>
+      </div>
+    </div>
+
+    ${dayCards}`;
 }
 
 /* ─────────────────────────────────────────
