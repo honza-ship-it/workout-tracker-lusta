@@ -144,7 +144,7 @@
     /* ── IMAGE GRID ── */
     .img-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 8px;
       margin-bottom: 18px;
     }
@@ -155,6 +155,7 @@
 
     .img-cell {
       aspect-ratio: 4/3;
+      max-height: 130px;
       border-radius: 10px;
       overflow: hidden;
       background: var(--surface2);
@@ -466,6 +467,58 @@
 
     .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
     .empty-state p { font-size: 15px; }
+
+    /* ── AI FOTO BTN ── */
+    .kal-ai-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .kal-ai-btn {
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .kal-ai-btn:disabled { opacity: .5; cursor: default; }
+    .kal-api-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 14px;
+      border: 1px solid var(--border);
+    }
+    .kal-api-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .kal-api-input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+      padding: 6px 10px;
+      flex: 1;
+      font-family: monospace;
+    }
+    .kal-api-input:focus { outline: none; border-color: var(--accent); }
+    .kal-api-status {
+      font-size: 12px;
+      white-space: nowrap;
+    }
 
     /* ── KALORIE ── */
     .kal-header {
@@ -827,6 +880,72 @@ const PROGRAM = {
         fallback: '🏋️'
       },
       {
+        id: 'seated_cable_row',
+        name: 'Seated Cable Row',
+        sets: '3 × 12 opak.',
+        tips: ['Záda vzpřímená', 'Tah k žaludku', 'Lopatky stáhnout k sobě', 'Pomalý návrat'],
+        imgs: [
+          'images/seated_cable_row_1.jpg',
+          'images/seated_cable_row_2.jpg',
+        ],
+        fallback: '🚣'
+      },
+      {
+        id: 'lat_pulldown_wide',
+        name: 'Lat Pulldown (široký úchop)',
+        sets: '4 × 10–12 opak.',
+        tips: ['Stáhnout lopatky dolů', 'Úchop širší než ramena', 'Lokty k tělu dolů', 'Nevyklánět příliš'],
+        imgs: [
+          'images/lat_pulldown_1.jpg',
+          'images/lat_pulldown_2.jpg',
+        ],
+        fallback: '🏋️'
+      },
+      {
+        id: 'db_shoulder_press',
+        name: 'Dumbbell Shoulder Press',
+        sets: '3 × 10–12 opak.',
+        tips: ['Lokty 90° na startu', 'Netlačit před obličej', 'Neprohýbat záda', 'Pomalý spust'],
+        imgs: [
+          'images/db_shoulder_press_1.jpg',
+          'images/db_shoulder_press_2.jpg',
+        ],
+        fallback: '🏋️'
+      },
+      {
+        id: 'pec_fly',
+        name: 'Pec Fly (stroj / kabel)',
+        sets: '3 × 12–15 opak.',
+        tips: ['Mírně pokrčené lokty', 'Pohyb jako objetí', 'Cítit protažení prsou', 'Neklesat s lokty dolů'],
+        imgs: [
+          'images/pec_fly_1.jpg',
+          'images/pec_fly_2.jpg',
+        ],
+        fallback: '🦋'
+      },
+      {
+        id: 'face_pull',
+        name: 'Face Pull (kabel)',
+        sets: '3 × 15 opak.',
+        tips: ['Kladka ve výši obličeje', 'Tahat k uším', 'Lokty nahoru', 'Pomalý kontrolovaný pohyb'],
+        imgs: [
+          'images/face_pull_1.jpg',
+          'images/face_pull_2.jpg',
+        ],
+        fallback: '💪'
+      },
+      {
+        id: 'bicycle_crunch',
+        name: 'Bicycle Crunch',
+        sets: '3 × 20 opak. (každá strana)',
+        tips: ['Ruce za hlavou', 'Loket k protilehlému kolenu', 'Záda u země', 'Nekroutit krkem'],
+        imgs: [
+          'images/bicycle_crunch_1.jpg',
+          'images/bicycle_crunch_2.jpg',
+        ],
+        fallback: '🚲'
+      },
+      {
         id: 'ohp',
         name: 'Overhead Press',
         sets: '3 × 8–10 opak.',
@@ -962,7 +1081,8 @@ let weights = JSON.parse(localStorage.getItem('wt_weights') || '{}');
 let collapsed_exercises = JSON.parse(localStorage.getItem('wt_collapsed') || '{}');
 let cal_data = JSON.parse(localStorage.getItem('wt_cal_data') || '{}');
 let cal_goal = parseInt(localStorage.getItem('wt_cal_goal') || '2500');
-let cal_week_offset = 0; // 0 = current week, -1 = last week, etc.
+let cal_week_offset = 0;
+let api_key = localStorage.getItem('wt_api_key') || '';
 
 function save() {
   localStorage.setItem('wt_weeks',     JSON.stringify(weeks));
@@ -970,6 +1090,78 @@ function save() {
   localStorage.setItem('wt_collapsed', JSON.stringify(collapsed_exercises));
   localStorage.setItem('wt_cal_data',  JSON.stringify(cal_data));
   localStorage.setItem('wt_cal_goal',  cal_goal);
+}
+
+function saveApiKey(val) {
+  api_key = val.trim();
+  localStorage.setItem('wt_api_key', api_key);
+}
+
+async function analyzePhoto(dateStr, inputEl) {
+  if (!api_key) { alert('Nejdřív zadej API klíč!'); return; }
+  const file = inputEl.files[0];
+  if (!file) return;
+
+  const btn = document.getElementById('ai-btn-' + dateStr);
+  btn.textContent = '⏳ Analyzuji...';
+  btn.disabled = true;
+
+  try {
+    const b64 = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = e => res(e.target.result.split(',')[1]);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': api_key,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5',
+        max_tokens: 300,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: file.type, data: b64 } },
+            { type: 'text', text: `Aktuální čas: ${new Date().getHours()}:${String(new Date().getMinutes()).padStart(2,'0')}.
+Odhadni kalorie jídla na fotce. Vrať POUZE JSON objekt bez komentáře:
+{"b":0,"sm":0,"l":0,"d":0,"sa":0,"h":0}
+Klíče: b=snídaně, sm=dop.svačina, l=oběd, d=večeře, sa=odp.svačina, h=hříchy/sladkosti.
+Kategorie urči podle aktuálního času: 6-10h→b, 10-12h→sm, 12-15h→l, 15-18h→sa, 18-22h→d, ostatní nebo pochutiny/sladkosti→h.
+Přiřaď kalorie do JEDNÉ kategorie, ostatní nech 0.` }
+          ]
+        }]
+      })
+    });
+
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error?.message || resp.status);
+
+    const text = data.content[0].text.trim();
+    const json = JSON.parse(text.match(/\{.*\}/s)[0]);
+
+    if (!cal_data[dateStr]) cal_data[dateStr] = {b:0,l:0,d:0,sm:0,sa:0,h:0};
+    for (const key of ['b','sm','l','d','sa','h']) {
+      if (json[key]) {
+        cal_data[dateStr][key] = (cal_data[dateStr][key] || 0) + json[key];
+      }
+    }
+    save();
+    renderKalorie();
+
+  } catch(e) {
+    alert('Chyba: ' + e.message);
+  } finally {
+    btn.textContent = '📷 Analyzovat fotku';
+    btn.disabled = false;
+    inputEl.value = '';
+  }
 }
 
 function toggleCard(id) {
@@ -1117,6 +1309,12 @@ function renderKalorie() {
           <div id="kal-bar-${ds}" class="kal-progress-bar${cls ? ' '+cls : ''}" style="width:${pct}%"></div>
         </div>
         <div class="kal-meals">${mealInputs}</div>
+        <div class="kal-ai-row">
+          <button id="ai-btn-${ds}" class="kal-ai-btn" onclick="document.getElementById('ai-file-${ds}').click()">📷 Analyzovat fotku</button>
+          <input id="ai-file-${ds}" type="file" accept="image/*" capture="environment" style="display:none"
+                 onchange="analyzePhoto('${ds}', this)">
+          <span style="font-size:12px;color:var(--text-muted)">AI odhadne kalorie z fotky jídla</span>
+        </div>
       </div>`;
   }).join('');
 
@@ -1127,6 +1325,13 @@ function renderKalorie() {
 
   container.innerHTML = `
     <h1 class="page-title">🔥 Kalorický deník</h1>
+
+    <div class="kal-api-row">
+      <span class="kal-api-label">🤖 Anthropic API klíč</span>
+      <input class="kal-api-input" type="password" placeholder="sk-ant-..." value="${api_key}"
+             onchange="saveApiKey(this.value)">
+      <span class="kal-api-status">${api_key ? '✅' : '—'}</span>
+    </div>
 
     <div class="kal-goal-row">
       <div class="kal-goal-label">Denní kalorický cíl</div>
@@ -1209,7 +1414,7 @@ function renderExercise(ex) {
       </div>
       <div class="exercise-body">
         <div class="img-grid">
-          ${ex.imgs.map((src, i) => renderImg(src, ex.fallback, ex.name, i)).join('')}
+          ${ex.imgs.slice(0,2).map((src, i) => renderImg(src, ex.fallback, ex.name, i)).join('')}
         </div>
         <div class="tips-label">Tipy</div>
         <ul class="tips-list">
